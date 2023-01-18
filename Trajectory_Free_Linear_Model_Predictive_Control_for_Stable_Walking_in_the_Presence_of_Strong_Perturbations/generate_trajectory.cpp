@@ -3,6 +3,11 @@
  * @author Giulio Romualdi , Satoshi Inoue
  * @copyright Released under the terms of the BSD 3-Clause License
  * @date 2023
+ * 
+ * 
+ * This code is implementation of this paper.
+ *  P. -b. Wieber, "Trajectory Free Linear Model Predictive Control for Stable Walking in the Presence of Strong Perturbations," 
+ *  2006 6th IEEE-RAS International Conference on Humanoid Robots, Genova, Italy, 2006, pp. 137-142, doi: 10.1109/ICHR.2006.321375.
  */
 
 // osqp-eigen
