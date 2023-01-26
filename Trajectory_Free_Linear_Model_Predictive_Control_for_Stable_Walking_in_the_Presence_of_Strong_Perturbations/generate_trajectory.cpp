@@ -148,8 +148,7 @@ void castMPCToQPHessian(const Eigen::DiagonalMatrix<double, (Z_SIZE * mpcWindow 
                 hessianMatrix.insert(i, i) = value;
         }
     }
-    // std::cout << hessianMatrix << std::endl;
-    // sparseDisplay(hessianMatrix);
+
 }
 
 // todo xRefの形変える
@@ -160,20 +159,14 @@ void castMPCToQPGradient(const Eigen::DiagonalMatrix<double, Z_SIZE * mpcWindow 
 
     Eigen::Matrix<double, Z_SIZE * mpcWindow + 1, 1> Qz_ref;
     Qz_ref = Q * (-zRef);
-    // std::cout << "Qz_ref\n" <<Qz_ref << "\nvalue" <<std::endl;
-    // std::cout << "X_SISE "<< X_SIZE << " mpcWindow " << mpcWindow << std::endl;
     // populate the gradient vector
     gradient = Eigen::VectorXd::Zero(X_SIZE * (mpcWindow + 1) + U_SIZE * mpcWindow, 1); // ここでのX_SIZEはC_SIZEを表す
     for (int i = 0; i * X_SIZE < X_SIZE * (mpcWindow + 1); i++)
     {
         int posQ = i;
         float value = Qz_ref(posQ, 0);
-        // std::cout << posQ << " ←posQ " << value << std::endl;
         gradient.block(i * X_SIZE, 0, X_SIZE, 1) = value * C.transpose();
-        // std::cout << C << std::endl;
-        // std::cout << " i " << i << std::endl;
     }
-    // std::cout << "gradient\n"<< gradient << std::endl;
 }
 
 template <size_t X_SIZE, size_t U_SIZE, size_t Z_SIZE, size_t mpcWindow>
@@ -212,19 +205,15 @@ void castMPCToQPConstraintMatrix(const Eigen::Matrix<double, X_SIZE, X_SIZE> &dy
             }
 
     // zの不等式制約のCを代入
-    // for (int i = (mpcWindow + 1) * X_SIZE; i < (X_SIZE * (mpcWindow + 1)) + Z_SIZE * (mpcWindow + 1); i++)
     for (int i = 0; i < Z_SIZE * (mpcWindow + 1); ++i)
     {
         sparseBlockAssignation(constraintMatrix, (i * Z_SIZE + (mpcWindow + 1) * X_SIZE), i * X_SIZE, outputMatrix);
-        // std::cout << "row " << (i * Z_SIZE + (mpcWindow + 1) * X_SIZE) << "col " << i << std::endl;
-        // std::cout << constraintMatrix << std::endl;
     }
 
     // uの不等式制約のIを代入
     for (int i = X_SIZE * (mpcWindow + 1); i < X_SIZE * (mpcWindow + 1) + U_SIZE * mpcWindow; i++)
     {
         constraintMatrix.insert(i + Z_SIZE * (mpcWindow + 1), i) = 1;
-        // std::cout << constraintMatrix << std::endl;
     }
     sparseDisplay(constraintMatrix);
 }
@@ -241,13 +230,7 @@ void castMPCToQPConstraintVectors(const Eigen::Matrix<double, Z_SIZE, 1> &zMax, 
     Eigen::VectorXd upperInequality = Eigen::MatrixXd::Zero(Z_SIZE * (mpcWindow + 1) + U_SIZE * mpcWindow, 1);
     for (int i = 0; i < mpcWindow + 1; i++)
     {
-        // if (zRef(i * Z_SIZE, 0) < 0)
-        // {
-        //     // zRefが負の場合
-        //     lowerInequality.block(i * Z_SIZE, 0, Z_SIZE, 1) = -zMin + zRef.block(i * Z_SIZE, 0, Z_SIZE, 1);
-        //     upperInequality.block(i * Z_SIZE, 0, Z_SIZE, 1) = -zMax + zRef.block(i * Z_SIZE, 0, Z_SIZE, 1);
-        // }
-        // else
+
         if (((i) % cycle_step < (double_support_step / 2)) || ((i) % cycle_step >= cycle_step - (double_support_step / 2)) || (i <= start_with_this_step + double_support_step / 2))
         {
             lowerInequality.block(i * Z_SIZE, 0, Z_SIZE, 1) = double_spt_zMin;
@@ -260,10 +243,7 @@ void castMPCToQPConstraintVectors(const Eigen::Matrix<double, Z_SIZE, 1> &zMax, 
             upperInequality.block(i * Z_SIZE, 0, Z_SIZE, 1) = zMax + zRef.block(i, 0, Z_SIZE, 1);
         }
     }
-    // std::cout << "lower\n"
-    //           << lowerInequality << std::endl
-    //           << "--- upper ---\n"
-    //           << upperInequality << std::endl;
+
     for (int i = 0; i < mpcWindow; i++)
     {
         lowerInequality.block(U_SIZE * i + Z_SIZE * (mpcWindow + 1), 0, U_SIZE, 1) = uMin;
@@ -297,14 +277,6 @@ void updateConstraintVectors(const Eigen::Matrix<double, X_SIZE, 1> &x0, const E
     upperBound.block(0, 0, X_SIZE, 1) = -x0;
     for (size_t i = 0; i < mpcWindow + 1; i++)
     {
-        // if (zRef(i * Z_SIZE, 0) < 0)
-        // {
-        //     // zRefが負の場合
-        //     lowerBound.block(i + X_SIZE * (1 + mpcWindow), 0, Z_SIZE, 1) = -zMin + zRef.block(i * Z_SIZE, 0, Z_SIZE, 1);
-        //     upperBound.block(i + X_SIZE * (1 + mpcWindow), 0, Z_SIZE, 1) = -zMax + zRef.block(i * Z_SIZE, 0, Z_SIZE, 1);
-        // }
-        // else
-
         // 両足支持期間
         if (((current_step + i) % cycle_step < (double_support_step / 2)) || ((current_step + i) % cycle_step >= cycle_step - (double_support_step / 2)) || (i + current_step <= start_with_this_step + double_support_step / 2))
         {
@@ -372,8 +344,8 @@ int main()
     zMin << -0.02;
     double_spport_zMax << zMax(0, 0) + step_width;
     double_spport_zMin << zMin(0, 0) - step_width;
-    uMax << 100;
-    uMin << -100;
+    uMax << 30;
+    uMin << -30;
 
     // allocate the weight matrices
     // ホライゾン長に渡る、書く予測ステップ毎のZxに対するコスト。ここではZxが1次元なので、mpcWindow + 1の数がQのサイズになる。 + 1してるのは状態にx0が入っている為。
@@ -403,16 +375,13 @@ int main()
     // cast the MPC problem as QP problem
     castMPCToQPHessian<Nx, Mu, Zx, mpcWindow>(Q, R, C, hessian);
     castMPCToQPGradient<Nx, Mu, Zx, mpcWindow>(Q, zRef, C, gradient);
-    // std::cout << gradient << std::endl;
     castMPCToQPConstraintMatrix<Nx, Mu, Zx, mpcWindow>(A, B, C, linearMatrix);
-    // std::cout << linearMatrix << std::endl;
     castMPCToQPConstraintVectors<Nx, Mu, Zx, mpcWindow>(zMax, zMin, double_spport_zMax, double_spport_zMin, uMax, uMin, x0, zRef, lowerBound, upperBound);
 
     // // instantiate the solver
     OsqpEigen::Solver solver;
 
     // settings
-    // solver.settings()->setVerbosity(false);
     solver.settings()->setWarmStart(false);
 
     // set the initial data of the QP solver
