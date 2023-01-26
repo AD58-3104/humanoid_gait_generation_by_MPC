@@ -1,4 +1,9 @@
 # humanoid_gait_generation_by_MPC
+Here are some examples of walking pattern generators using Model predictive control.
+
+List of paper which is implemented in this repository.
+- P. -b. Wieber, "Trajectory Free Linear Model Predictive Control for Stable Walking in the Presence of Strong Perturbations," 2006 6th IEEE-RAS International Conference on Humanoid Robots, Genova, Italy, 2006, pp. 137-142, doi: 10.1109/ICHR.2006.321375.
+
 
 ## Required library
 -  gnuplot-cpp https://github.com/martinruenz/gnuplot-cpp.git
