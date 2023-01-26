@@ -128,6 +128,8 @@ void castMPCToQPHessian(const Eigen::DiagonalMatrix<double, (Z_SIZE * mpcWindow 
     hessianMatrix.resize(X_SIZE * (mpcWindow + 1) + U_SIZE * mpcWindow, X_SIZE * (mpcWindow + 1) + U_SIZE * mpcWindow);
 
     // populate hessian matrix
+    //QPの変数を最適入力だけでなく、状態も含め、 x = [x(k) ... x(k+N) u(k+1) ... u(k+N)]^T としているため、hessianはQとRが分離した形の対角行列として表せる。
+    //ここでは、状態ではなく出力を追従させたい為、Cを掛けておく。
     for (int i = 0; i < X_SIZE * (mpcWindow + 1) + U_SIZE * mpcWindow; i++)
     {
         if (i < X_SIZE * (mpcWindow + 1))
@@ -151,7 +153,7 @@ void castMPCToQPHessian(const Eigen::DiagonalMatrix<double, (Z_SIZE * mpcWindow 
 
 }
 
-// todo xRefの形変える
+
 template <size_t X_SIZE, size_t U_SIZE, size_t Z_SIZE, size_t mpcWindow>
 void castMPCToQPGradient(const Eigen::DiagonalMatrix<double, Z_SIZE * mpcWindow + 1> &Q, const Eigen::Matrix<double, Z_SIZE * mpcWindow + 1, 1> &zRef,
                          const Eigen::Matrix<double, Z_SIZE, X_SIZE> &C, Eigen::VectorXd &gradient)
@@ -161,10 +163,12 @@ void castMPCToQPGradient(const Eigen::DiagonalMatrix<double, Z_SIZE * mpcWindow 
     Qz_ref = Q * (-zRef);
     // populate the gradient vector
     gradient = Eigen::VectorXd::Zero(X_SIZE * (mpcWindow + 1) + U_SIZE * mpcWindow, 1); // ここでのX_SIZEはC_SIZEを表す
+    //QPの変数を最適入力だけでなく、状態も含め、 x = [x(k) ... x(k+N) u(k+1) ... u(k+N)]^T としているため、以下の単純な形でgradientを表す事が出来る。
     for (int i = 0; i * X_SIZE < X_SIZE * (mpcWindow + 1); i++)
     {
         int posQ = i;
         float value = Qz_ref(posQ, 0);
+        //今回、目標に追従するのは状態ではなく出力であるのでCを掛ける必要あり
         gradient.block(i * X_SIZE, 0, X_SIZE, 1) = value * C.transpose();
     }
 }
@@ -174,7 +178,12 @@ void castMPCToQPConstraintMatrix(const Eigen::Matrix<double, X_SIZE, X_SIZE> &dy
                                  const Eigen::Matrix<double, Z_SIZE, X_SIZE> &outputMatrix, Eigen::SparseMatrix<double> &constraintMatrix)
 {
     constraintMatrix.resize(X_SIZE * (mpcWindow + 1) + Z_SIZE * (mpcWindow + 1) + U_SIZE * mpcWindow, X_SIZE * (mpcWindow + 1) + U_SIZE * mpcWindow);
-
+    // 　↑の1つめの　X_SIZE * (mpcWindow + 1) = QPのxの中に状態を持たせる為に使う変数の分。 x0を不等式制約とし、
+    //                                         そのx0を使ってそれ以降のダイナミクスを順々に計算し、それを = 0の等式制約とすると、
+    //                                         なんとx(n) = Ax(n-1) + Bu(n-1)の予測の式を制約上で表す事ができ、QPのxの中に状態を変数として導入出来る
+    // 　↑の2つめの　Z_SIZE * (mpcWindow + 1) = 出力の不等式制約
+    // 　↑の3つめの　U_SIZE * mpcWindow = 入力の不等式制約
+    
     // populate linear constraint matrix
     // 状態の所の-Iを代入
     for (int i = 0; i < X_SIZE * (mpcWindow + 1); i++)
@@ -385,7 +394,11 @@ int main()
     solver.settings()->setWarmStart(false);
 
     // set the initial data of the QP solver
-    solver.data()->setNumberOfVariables(Nx * (mpcWindow + 1) + Mu * mpcWindow);
+    
+    //ここではQPの変数を求める最適入力だけとするのではなく、x(0) ~ x(k+N)までのN+1個の状態も含める。
+    //変数のベクトルは x = [x(k) ... x(k+N) u(k+1) ... u(k+N)]^T という形のベクトルとなる。
+    solver.data()->setNumberOfVariables(Nx * (mpcWindow + 1) + Mu * mpcWindow); 
+    
     solver.data()->setNumberOfConstraints(Nx * (mpcWindow + 1) + Zx * (mpcWindow + 1) + Mu * mpcWindow);
     if (!solver.data()->setHessianMatrix(hessian))
         return 1;
