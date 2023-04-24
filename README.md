@@ -9,3 +9,11 @@ List of paper which is implemented in this repository.
 -  gnuplot-cpp https://github.com/martinruenz/gnuplot-cpp.git
 - Eigen3.4 https://eigen.tuxfamily.org/index.php?title=3.4
 - osqp-eigen https://github.com/robotology/osqp-eigen.git
+
+## How to run 
+1. install Eigen3.4 & osqp-eigen
+2. cd [your target directory] 
+3. mkdir build
+4. cmake .. 
+5. make
+6. ./exmple
