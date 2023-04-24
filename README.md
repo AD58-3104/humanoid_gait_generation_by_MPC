@@ -8,6 +8,7 @@ List of paper which is implemented in this repository.
 ## Required library
 -  gnuplot-cpp https://github.com/martinruenz/gnuplot-cpp.git
 - Eigen3.4 https://eigen.tuxfamily.org/index.php?title=3.4
+- osqp https://osqp.org/
 - osqp-eigen https://github.com/robotology/osqp-eigen.git
 
 ## How to run 
