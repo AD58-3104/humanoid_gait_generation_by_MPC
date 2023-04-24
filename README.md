@@ -12,7 +12,7 @@ List of paper which is implemented in this repository.
 - osqp-eigen https://github.com/robotology/osqp-eigen.git
 
 ## How to run 
-1. install Eigen3.4 & osqp-eigen
+1. install Eigen3.4 & osqp & osqp-eigen
 2. cd [your target directory] 
 3. mkdir build
 4. cmake .. 
