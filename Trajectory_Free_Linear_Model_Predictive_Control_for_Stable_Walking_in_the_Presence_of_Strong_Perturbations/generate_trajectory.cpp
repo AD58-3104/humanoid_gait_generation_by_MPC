@@ -137,7 +137,7 @@ void castMPCToQPHessian(const Eigen::DiagonalMatrix<double, (Z_SIZE * mpcWindow 
             if (i % X_SIZE == 0)
             {
                 int posQ = i / X_SIZE;
-                float value = Q.diagonal()[posQ];
+                float value = Q.diagonal()[posQ] / 2.0f;
                 Eigen::MatrixXd C_tC = C.transpose() * C * value;
                 sparseBlockAssignation(hessianMatrix, i, i, C_tC);
             }
@@ -145,7 +145,7 @@ void castMPCToQPHessian(const Eigen::DiagonalMatrix<double, (Z_SIZE * mpcWindow 
         else
         {
             int posR = i % U_SIZE;
-            float value = R.diagonal()[posR];
+            float value = R.diagonal()[posR] /2.0f;
             if (value != 0)
                 hessianMatrix.insert(i, i) = value;
         }
@@ -353,8 +353,8 @@ int main()
     zMin << -0.02;
     double_spport_zMax << zMax(0, 0) + step_width;
     double_spport_zMin << zMin(0, 0) - step_width;
-    uMax << 30;
-    uMin << -30;
+    uMax << 100;
+    uMin << -100;
 
     // allocate the weight matrices
     // ホライゾン長に渡る、書く予測ステップ毎のZxに対するコスト。ここではZxが1次元なので、mpcWindow + 1の数がQのサイズになる。 + 1してるのは状態にx0が入っている為。
